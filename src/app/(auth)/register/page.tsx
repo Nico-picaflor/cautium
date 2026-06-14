@@ -24,10 +24,11 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: { full_name: fullName, org_name: orgName },
       },
     });
@@ -35,9 +36,13 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
+    } else if (data.session) {
+      // email confirmation disabled — go straight to dashboard
       router.push("/dashboard");
       router.refresh();
+    } else {
+      // email confirmation required
+      router.push("/check-email");
     }
   }
 
