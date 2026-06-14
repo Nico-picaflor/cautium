@@ -8,7 +8,7 @@ export default function CheckEmailPage() {
       <Card className="w-full max-w-md text-center">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <span className="text-2xl font-bold text-blue-600">Cautio</span>
+            <span className="text-2xl font-bold text-blue-600">Cautium</span>
           </div>
           <div className="flex justify-center mb-2 text-4xl">📬</div>
           <CardTitle className="text-2xl">Revisa tu email</CardTitle>

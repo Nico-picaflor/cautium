@@ -38,7 +38,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <span className="text-2xl font-bold text-blue-600">Cautio</span>
+            <span className="text-2xl font-bold text-blue-600">Cautium</span>
           </div>
           <CardTitle className="text-2xl">Sign in</CardTitle>
           <CardDescription>Enter your credentials to access your workspace</CardDescription>
