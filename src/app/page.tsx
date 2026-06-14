@@ -95,14 +95,24 @@ export default function LandingPage() {
   const price = (m: number) => isAnnual ? Math.round(m * 0.8) : m;
   const billingNote = isAnnual ? "por usuario / mes · facturado anual" : "por usuario / mes";
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const v = email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
       setError("Introduce un email válido");
       return;
     }
-    setSubmitted(true);
     setError("");
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: v }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // fail silently — UX still shows success
+    }
+    setSubmitted(true);
   }
 
   const segBtn = (active: boolean) => ({
