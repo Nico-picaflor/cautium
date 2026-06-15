@@ -50,57 +50,60 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: "No hay documentos en la base de conocimiento. Sube políticas y controles primero." }, { status: 400 });
   }
 
-  // Build prompt — answer all questions in one call
-  const questionsList = questions.map((q: any, i: number) =>
-    `${i + 1}. [ID:${q.id}]${q.category ? ` [CATEGORÍA: ${q.category}]` : ""} ${q.text}`
-  ).join("\n");
+  const titleContext = questionnaire?.title ? `Tipo de cuestionario: ${questionnaire.title}.` : "";
 
-  const titleContext = questionnaire?.title
-    ? `Tipo de cuestionario: ${questionnaire.title}.`
-    : "";
+  function buildPrompt(batch: any[]) {
+    const questionsList = batch.map((q: any, i: number) =>
+      `${i + 1}. [ID:${q.id}]${q.category ? ` [CATEGORÍA: ${q.category}]` : ""} ${q.text}`
+    ).join("\n");
 
-  const prompt = `Eres un experto en seguridad de la información y gestión de riesgos de terceros (TPRM).
-
+    return `Eres un experto en seguridad de la información y gestión de riesgos de terceros (TPRM).
 ${titleContext}
 
-Tu empresa debe responder este cuestionario de seguridad usando su base de conocimiento interna (políticas, controles, auditorías y certificados):
-
+Base de conocimiento interna (políticas, controles, auditorías y certificados):
 ${knowledgeBase}
 
 ---
 
-Usando ÚNICAMENTE la información de los documentos anteriores, responde cada pregunta. Ten en cuenta:
-- Si la pregunta tiene categoría indicada, úsala para contextualizar la respuesta dentro del dominio correcto de seguridad
-- Da una respuesta concisa y precisa (1-3 párrafos)
-- Cita el documento específico que respalda la respuesta
-- Asigna una confianza: "high" (respuesta directa en los docs), "medium" (respuesta inferida), "low" (información insuficiente)
+Usando ÚNICAMENTE los documentos anteriores, responde cada pregunta:
+- Si tiene categoría, úsala para contextualizar
+- Respuesta concisa (1-3 párrafos)
+- Cita el documento fuente
+- Confianza: "high" (respuesta directa), "medium" (inferida), "low" (insuficiente)
 
 PREGUNTAS:
 ${questionsList}
 
-Responde en JSON con este formato exacto (array con una entrada por pregunta):
-[
-  {
-    "id": "uuid-de-la-pregunta",
-    "answer": "respuesta completa aquí",
-    "confidence": "high|medium|low",
-    "source": "nombre del documento citado"
-  }
-]
+Responde en JSON (array, una entrada por pregunta):
+[{"id":"uuid","answer":"respuesta","confidence":"high|medium|low","source":"doc"}]
 
-Devuelve ÚNICAMENTE el JSON, sin markdown ni comentarios.`;
+ÚNICAMENTE el JSON, sin markdown.`;
+  }
+
+  // Process in batches of 15 to stay within Vercel's 60s timeout
+  const BATCH_SIZE = 15;
+  const batches: any[][] = [];
+  for (let i = 0; i < questions.length; i += BATCH_SIZE) {
+    batches.push(questions.slice(i, i + BATCH_SIZE));
+  }
 
   let answers: any[] = [];
-  try {
-    const msg = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 8096,
-      messages: [{ role: "user", content: prompt }],
-    });
+  for (const batch of batches) {
+    try {
+      const msg = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 4096,
+        messages: [{ role: "user", content: buildPrompt(batch) }],
+      });
+      if (msg.content[0].type !== "text") continue;
+      const batchAnswers = JSON.parse(msg.content[0].text);
+      answers = answers.concat(batchAnswers);
+    } catch (e) {
+      // Continue with next batch on error
+    }
+  }
 
-    if (msg.content[0].type !== "text") throw new Error("Unexpected response type");
-    answers = JSON.parse(msg.content[0].text);
-  } catch (e) {
+  if (answers.length === 0) {
     return NextResponse.json({ error: "Error al procesar respuestas de IA" }, { status: 500 });
   }
 
@@ -111,15 +114,13 @@ Devuelve ÚNICAMENTE el JSON, sin markdown ni comentarios.`;
         ai_answer: a.answer,
         ai_confidence: a.confidence,
         ai_source: a.source,
-        human_answer: a.answer, // pre-fill human answer with AI answer for editing
+        human_answer: a.answer,
         approved: false,
       })
       .eq("id", a.id)
   );
-
   await Promise.all(updates);
 
-  // Update questionnaire answered count
   await (service.from("questionnaires") as any)
     .update({ answered_questions: answers.length, status: "in_progress" })
     .eq("id", questionnaireId);
