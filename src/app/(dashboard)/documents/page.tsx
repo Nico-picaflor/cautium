@@ -27,7 +27,7 @@ const typeLabel: Record<string, string> = {
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +51,7 @@ export default function DocumentsPage() {
     }
     if (file.size > 20 * 1024 * 1024) { setError("Máximo 20 MB"); return; }
     setError(null);
-    setUploading(true);
+    setUploading((n) => n + 1);
 
     const form = new FormData();
     form.append("file", file);
@@ -64,7 +64,7 @@ export default function DocumentsPage() {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setUploading(false);
+      setUploading((n) => n - 1);
     }
   }
 
@@ -75,16 +75,17 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Base de conocimiento</h1>
           <p className="text-muted-foreground">Políticas, controles, auditorías y certificados de tu empresa</p>
         </div>
-        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-          {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-          {uploading ? "Procesando…" : "Subir documento"}
+        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading > 0}>
+          {uploading > 0 ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+          {uploading > 0 ? `Procesando ${uploading}…` : "Subir documentos"}
         </Button>
       </div>
 
       <input
         ref={fileInputRef} type="file" accept=".pdf,.docx,application/pdf"
+        multiple
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+        onChange={(e) => { const files = Array.from(e.target.files ?? []); files.forEach(handleFile); e.target.value = ""; }}
       />
 
       {error && (
@@ -94,13 +95,13 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      {uploading && (
+      {uploading > 0 && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="flex items-center gap-4 p-5">
             <Loader2 className="h-7 w-7 text-blue-500 animate-spin shrink-0" />
             <div>
-              <p className="font-semibold text-blue-900">Extrayendo texto del documento…</p>
-              <p className="text-sm text-blue-600">Claude está indexando el contenido para la base de conocimiento.</p>
+              <p className="font-semibold text-blue-900">Procesando {uploading} documento{uploading > 1 ? "s" : ""}…</p>
+              <p className="text-sm text-blue-600">Claude está extrayendo e indexando el contenido.</p>
             </div>
           </CardContent>
         </Card>
@@ -112,7 +113,7 @@ export default function DocumentsPage() {
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); Array.from(e.dataTransfer.files).forEach(handleFile); }}
           onClick={() => fileInputRef.current?.click()}
           className={`cursor-pointer border-2 border-dashed rounded-xl flex flex-col items-center justify-center py-20 transition-colors ${dragOver ? "border-blue-400 bg-blue-50" : "border-gray-200 hover:border-gray-300 bg-white"}`}
         >
@@ -156,7 +157,7 @@ export default function DocumentsPage() {
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); Array.from(e.dataTransfer.files).forEach(handleFile); }}
             onClick={() => fileInputRef.current?.click()}
             className={`cursor-pointer border-2 border-dashed rounded-xl flex items-center justify-center py-6 transition-colors ${dragOver ? "border-blue-400 bg-blue-50" : "border-gray-100 hover:border-gray-200"}`}
           >
