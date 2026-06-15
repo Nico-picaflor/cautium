@@ -13,31 +13,16 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let { data: profile } = await (service.from("users") as any)
+  const { data: profile, error: profileError } = await (service.from("users") as any)
     .select("organization_id")
     .eq("id", user.id)
     .single();
 
-  // Auto-create org + profile if trigger didn't run (e.g. user registered before trigger was set up)
   if (!profile) {
-    const orgSlug = `org-${user.id.replace(/-/g, "").slice(0, 8)}`;
-    const orgName = user.email?.split("@")[1] ?? "My Organization";
-    const { data: org } = await (service.from("organizations") as any)
-      .insert({ name: orgName, slug: orgSlug })
-      .select()
-      .single();
-    if (org) {
-      await (service.from("users") as any).insert({
-        id: user.id,
-        organization_id: org.id,
-        full_name: user.email?.split("@")[0] ?? "User",
-        role: "owner",
-      });
-      profile = { organization_id: org.id };
-    }
+    return NextResponse.json({
+      error: `Profile not found for user ${user.id}. DB error: ${profileError?.message ?? "none"}`,
+    }, { status: 500 });
   }
-
-  if (!profile) return NextResponse.json({ error: "No se pudo crear el perfil de usuario" }, { status: 500 });
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
