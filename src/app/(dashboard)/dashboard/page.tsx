@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Building2, FileText, ClipboardList, AlertTriangle } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -9,36 +8,41 @@ export default async function DashboardPage() {
 
   const [{ count: vendorCount }, { count: docCount }, { count: questionnaireCount }] =
     await Promise.all([
-      supabase.from("vendors").select("*", { count: "exact", head: true }),
-      supabase.from("documents").select("*", { count: "exact", head: true }),
-      supabase.from("questionnaires").select("*", { count: "exact", head: true }),
+      (supabase.from("vendors") as any).select("*", { count: "exact", head: true }),
+      (supabase.from("documents") as any).select("*", { count: "exact", head: true }),
+      (supabase.from("questionnaires") as any).select("*", { count: "exact", head: true }),
     ]);
 
+  const name = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "—";
+
   const stats = [
-    { label: "Total Vendors", value: vendorCount ?? 0, icon: Building2, color: "text-blue-600" },
-    { label: "Documents", value: docCount ?? 0, icon: FileText, color: "text-green-600" },
-    { label: "Questionnaires", value: questionnaireCount ?? 0, icon: ClipboardList, color: "text-purple-600" },
-    { label: "High Risk Vendors", value: 0, icon: AlertTriangle, color: "text-red-600" },
+    { label: "Proveedores", value: vendorCount ?? 0, icon: Building2, sub: "registrados" },
+    { label: "Documentos", value: docCount ?? 0, icon: FileText, sub: "indexados" },
+    { label: "Cuestionarios", value: questionnaireCount ?? 0, icon: ClipboardList, sub: "en total" },
+    { label: "Alto riesgo", value: 0, icon: AlertTriangle, sub: "proveedores" },
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-6xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {user?.user_metadata?.full_name ?? user?.email}
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Panel</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Hola de nuevo, <span className="font-medium text-gray-700">{name}</span></p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map(({ label, value, icon: Icon, color }) => (
-          <Card key={label}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-              <Icon className={`h-5 w-5 ${color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{value}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(({ label, value, icon: Icon, sub }) => (
+          <Card key={label} className="overflow-hidden">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 font-mono">{sub}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-2 shrink-0">
+                  <Icon className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -46,19 +50,35 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Vendors</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-700">Cuestionarios abiertos</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">No vendors yet. Add your first vendor to start tracking risk.</p>
+            {(questionnaireCount ?? 0) === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <ClipboardList className="h-8 w-8 text-gray-200 mb-2" />
+                <p className="text-sm text-gray-400">Sin cuestionarios todavía</p>
+                <a href="/questionnaires" className="text-xs text-teal-600 hover:underline mt-1">Subir cuestionario →</a>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Ve a <a href="/questionnaires" className="text-teal-600 hover:underline">Cuestionarios</a> para gestionar.</p>
+            )}
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Open Questionnaires</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-gray-700">Base de conocimiento</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">No questionnaires sent. Create one to assess vendor risk.</p>
+            {(docCount ?? 0) === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <FileText className="h-8 w-8 text-gray-200 mb-2" />
+                <p className="text-sm text-gray-400">Sin documentos indexados</p>
+                <a href="/documents" className="text-xs text-teal-600 hover:underline mt-1">Subir políticas →</a>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500"><span className="font-semibold text-gray-800">{docCount}</span> documentos indexados y listos.</p>
+            )}
           </CardContent>
         </Card>
       </div>

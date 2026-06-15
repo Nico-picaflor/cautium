@@ -186,12 +186,12 @@ export default function QuestionnairePage() {
 
       {/* Answering overlay */}
       {answering && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-teal-200 bg-teal-50">
           <CardContent className="flex items-center gap-4 p-5">
-            <Loader2 className="h-8 w-8 text-blue-500 animate-spin shrink-0" />
+            <Loader2 className="h-8 w-8 text-teal-500 animate-spin shrink-0" />
             <div>
-              <p className="font-semibold text-blue-900">Respondiendo {questions.length} preguntas con IA…</p>
-              <p className="text-sm text-blue-600">Claude está analizando tu base de conocimiento. Puede tardar 30–60 segundos.</p>
+              <p className="font-semibold text-teal-900">Respondiendo {questions.length} preguntas…</p>
+              <p className="text-sm text-teal-600">Cautium está analizando tu base de conocimiento. Puede tardar 30–60 segundos.</p>
             </div>
           </CardContent>
         </Card>
@@ -225,7 +225,7 @@ export default function QuestionnairePage() {
             <Sparkles className="h-12 w-12 text-gray-300 mb-3" />
             <p className="font-medium text-gray-700">{questions.length} preguntas listas</p>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Haz clic en "Responder con IA" para que Claude analice tu base de conocimiento y responda automáticamente.
+              Haz clic en "Responder con IA" para que Cautium analice tu base de conocimiento y responda automáticamente.
             </p>
           </CardContent>
         </Card>
