@@ -74,6 +74,14 @@ export default function QuestionnairePage() {
     setQuestions(qs ?? []);
     const first = (qs ?? []).find((q: Question) => !q.approved);
     if (first) setExpandedId(first.id);
+
+    // auto-correct status if all questions are approved but status hasn't been updated
+    const allApproved = (qs ?? []).length > 0 && (qs ?? []).every((q: Question) => q.approved);
+    if (allApproved && q?.status !== "completed") {
+      await (supabase.from("questionnaires") as any).update({ status: "completed" }).eq("id", id);
+      setQuestionnaire((prev: any) => prev ? { ...prev, status: "completed" } : prev);
+    }
+
     setLoading(false);
   }
 
@@ -106,7 +114,18 @@ export default function QuestionnairePage() {
     await (supabase.from("questions") as any)
       .update({ approved: newVal })
       .eq("id", question.id);
-    setQuestions((prev) => prev.map((q) => q.id === question.id ? { ...q, approved: newVal } : q));
+    const updated = questions.map((q) => q.id === question.id ? { ...q, approved: newVal } : q);
+    setQuestions(updated);
+
+    // sync questionnaire status based on new approval count
+    const totalApproved = updated.filter((q) => q.approved).length;
+    const total = updated.length;
+    const newStatus = totalApproved === total && total > 0 ? "completed" : "in_progress";
+    await (supabase.from("questionnaires") as any)
+      .update({ status: newStatus })
+      .eq("id", id);
+    setQuestionnaire((prev: any) => prev ? { ...prev, status: newStatus } : prev);
+
     if (newVal) {
       const idx = questions.findIndex((q) => q.id === question.id);
       const next = questions.slice(idx + 1).find((q) => !q.approved);
