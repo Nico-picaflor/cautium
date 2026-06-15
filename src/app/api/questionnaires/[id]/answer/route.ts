@@ -21,6 +21,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const questionnaireId = params.id;
 
+  // Load questionnaire metadata
+  const { data: questionnaire } = await (service.from("questionnaires") as any)
+    .select("title, client_name")
+    .eq("id", questionnaireId)
+    .single();
+
   // Load questions
   const { data: questions } = await (service.from("questions") as any)
     .select("id, text, category, order_index")
@@ -49,15 +55,22 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     `${i + 1}. [ID:${q.id}]${q.category ? ` [CATEGORÍA: ${q.category}]` : ""} ${q.text}`
   ).join("\n");
 
+  const titleContext = questionnaire?.title
+    ? `Tipo de cuestionario: ${questionnaire.title}.`
+    : "";
+
   const prompt = `Eres un experto en seguridad de la información y gestión de riesgos de terceros (TPRM).
 
-Tu empresa tiene la siguiente base de conocimiento (políticas internas, controles, certificados y auditorías):
+${titleContext}
+
+Tu empresa debe responder este cuestionario de seguridad usando su base de conocimiento interna (políticas, controles, auditorías y certificados):
 
 ${knowledgeBase}
 
 ---
 
-Usando ÚNICAMENTE la información de los documentos anteriores, responde cada una de las siguientes preguntas de un cuestionario de seguridad enviado por un cliente. Para cada pregunta:
+Usando ÚNICAMENTE la información de los documentos anteriores, responde cada pregunta. Ten en cuenta:
+- Si la pregunta tiene categoría indicada, úsala para contextualizar la respuesta dentro del dominio correcto de seguridad
 - Da una respuesta concisa y precisa (1-3 párrafos)
 - Cita el documento específico que respalda la respuesta
 - Asigna una confianza: "high" (respuesta directa en los docs), "medium" (respuesta inferida), "low" (información insuficiente)
