@@ -37,9 +37,10 @@ export default function DocumentsPage() {
 
   async function fetchDocuments() {
     setLoading(true);
-    const { data } = await (supabase.from("documents") as any)
+    const { data, error } = await (supabase.from("documents") as any)
       .select("id, name, type, file_size, extracted_text, created_at")
       .order("created_at", { ascending: false });
+    if (error) setError(`Error cargando documentos: ${error.message}`);
     setDocuments(data ?? []);
     setLoading(false);
   }
