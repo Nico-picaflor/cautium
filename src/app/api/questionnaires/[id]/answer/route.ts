@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await (supabase.from("users") as any)
+  const { data: profile } = await (service.from("users") as any)
     .select("organization_id")
     .eq("id", user.id)
     .single();
