@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft, Sparkles, Download, CheckCircle2, Circle,
   Loader2, AlertTriangle, ChevronDown, ChevronUp, BookOpen,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type Question = {
   id: string; text: string; category: string | null; order_index: number;
@@ -19,24 +19,38 @@ type Question = {
 };
 
 type Questionnaire = {
-  id: string; title: string; client_name: string | null;
+  id: string; title: string; client_name: string | null; standard: string | null;
   status: string; total_questions: number; answered_questions: number;
 };
 
-const confidenceBadge: Record<string, string> = {
-  high: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  low: "bg-red-100 text-red-700",
+const CONFIDENCE_BADGE: Record<string, string> = {
+  high: "bg-green-50 text-green-700 border border-green-200",
+  medium: "bg-amber-50 text-amber-700 border border-amber-200",
+  low: "bg-red-50 text-red-700 border border-red-200",
 };
-const confidenceLabel: Record<string, string> = {
-  high: "Alta confianza", medium: "Media confianza", low: "Baja confianza",
-};
+
+function SkeletonRow() {
+  return (
+    <Card className="border-[#E7ECF2]">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-5 h-5 rounded-full bg-gray-100 shrink-0 mt-0.5 animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 bg-gray-100 rounded animate-pulse w-3/4" />
+            <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function QuestionnairePage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
   const supabase = createClient();
+  const t = useTranslations("detail");
 
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -58,7 +72,6 @@ export default function QuestionnairePage() {
     ]);
     setQuestionnaire(q);
     setQuestions(qs ?? []);
-    // Auto-expand first unanswered
     const first = (qs ?? []).find((q: Question) => !q.approved);
     if (first) setExpandedId(first.id);
     setLoading(false);
@@ -94,8 +107,6 @@ export default function QuestionnairePage() {
       .update({ approved: newVal })
       .eq("id", question.id);
     setQuestions((prev) => prev.map((q) => q.id === question.id ? { ...q, approved: newVal } : q));
-
-    // Move to next unapproved
     if (newVal) {
       const idx = questions.findIndex((q) => q.id === question.id);
       const next = questions.slice(idx + 1).find((q) => !q.approved);
@@ -119,169 +130,170 @@ export default function QuestionnairePage() {
   }
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>;
-  if (!questionnaire) return <div className="py-20 text-center text-muted-foreground">Cuestionario no encontrado</div>;
+  if (!questionnaire) return <div className="py-20 text-center text-[#8794A8]">{t("notFound")}</div>;
 
   const hasAnswers = questions.some((q) => q.ai_answer);
   const approved = questions.filter((q) => q.approved).length;
   const categories = Array.from(new Set(questions.map((q) => q.category).filter(Boolean))) as string[];
   const filtered = filterCategory ? questions.filter((q) => q.category === filterCategory) : questions;
 
+  const confidenceLabel: Record<string, string> = {
+    high: t("confidenceHigh"),
+    medium: t("confidenceMedium"),
+    low: t("confidenceLow"),
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
-      {/* Header */}
       <div className="flex items-start gap-4">
-        <button onClick={() => router.push("/questionnaires")} className="mt-1 text-muted-foreground hover:text-gray-900">
+        <button onClick={() => router.push("/questionnaires")} className="mt-1 text-[#8794A8] hover:text-[#0F1A2E] transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 truncate">{questionnaire.title}</h1>
-          <p className="text-muted-foreground">
-            Cliente: <span className="font-medium text-gray-700">{questionnaire.client_name ?? "—"}</span>
-            {" · "}{questions.length} preguntas · {approved} aprobadas
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-[#0F1A2E] truncate" style={{ fontFamily: "\'Space Grotesk\', sans-serif" }}>
+              {questionnaire.title}
+            </h1>
+            {questionnaire.standard && (
+              <span className="text-xs px-2 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-600 shrink-0" style={{ fontFamily: "\'JetBrains Mono\', monospace" }}>
+                {questionnaire.standard}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-[#5A6678] mt-0.5">
+            {t("client")}: <span className="font-medium text-[#0F1A2E]">{questionnaire.client_name ?? "—"}</span>
+            {" · "}{t("questions", { count: questions.length })} · {t("approved", { count: approved })}
           </p>
         </div>
         <div className="flex gap-2 shrink-0">
           {hasAnswers && (
             <Button variant="outline" onClick={handleExport} disabled={exporting}>
-              {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Exportar Excel
+              {exporting ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Download className="h-4 w-4 me-2" />}
+              {exporting ? t("exporting") : t("exportExcel")}
             </Button>
           )}
           {!hasAnswers ? (
             <Button onClick={handleAnswerWithAI} disabled={answering}>
-              {answering ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              {answering ? "Respondiendo con IA…" : "Responder con IA"}
+              {answering ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Sparkles className="h-4 w-4 me-2" />}
+              {answering ? t("answering") : t("answerWithAI")}
             </Button>
           ) : (
             <Button variant="outline" onClick={handleAnswerWithAI} disabled={answering}>
-              {answering ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Re-generar
+              {answering ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Sparkles className="h-4 w-4 me-2" />}
+              {answering ? t("answering") : t("reGenerate")}
             </Button>
           )}
         </div>
       </div>
 
-      {/* Progress bar */}
       {hasAnswers && (
         <div className="space-y-1">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Progreso de revisión</span>
-            <span>{approved} / {questions.length}</span>
+          <div className="flex justify-between text-sm text-[#5A6678]">
+            <span>{t("reviewProgress")}</span>
+            <span style={{ fontFamily: "\'JetBrains Mono\', monospace" }}>{approved} / {questions.length}</span>
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-green-500 rounded-full transition-all"
-              style={{ width: `${questions.length ? (approved / questions.length) * 100 : 0}%` }}
-            />
+            <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${questions.length ? (approved / questions.length) * 100 : 0}%` }} />
           </div>
         </div>
       )}
 
-      {/* AI error */}
       {answerError && (
         <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
           <AlertTriangle className="h-4 w-4 shrink-0" />{answerError}
         </div>
       )}
 
-      {/* Answering overlay */}
       {answering && (
-        <Card className="border-teal-200 bg-teal-50">
-          <CardContent className="flex items-center gap-4 p-5">
-            <Loader2 className="h-8 w-8 text-teal-500 animate-spin shrink-0" />
-            <div>
-              <p className="font-semibold text-teal-900">Respondiendo {questions.length} preguntas…</p>
-              <p className="text-sm text-teal-600">Cautium está analizando tu base de conocimiento. Puede tardar 30–60 segundos.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          <Card className="border-teal-200 bg-teal-50">
+            <CardContent className="flex items-center gap-4 p-5">
+              <Loader2 className="h-8 w-8 text-teal-500 animate-spin shrink-0" />
+              <div>
+                <p className="font-semibold text-teal-900">{t("analyzing", { count: questions.length })}</p>
+                <p className="text-sm text-teal-600">{t("analyzingDesc")}</p>
+              </div>
+            </CardContent>
+          </Card>
+          {questions.slice(0, 6).map((q) => (
+            <Card key={q.id} className="border-[#E7ECF2]">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-gray-100 shrink-0 mt-0.5 animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm text-[#0F1A2E]">{q.order_index + 1}. {q.text}</p>
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {questions.length > 6 && Array.from({ length: Math.min(4, questions.length - 6) }).map((_, i) => <SkeletonRow key={i} />)}
+        </div>
       )}
 
-      {/* Category filter */}
-      {categories.length > 1 && (
+      {categories.length > 1 && !answering && (
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setFilterCategory(null)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${!filterCategory ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-600 hover:border-gray-400"}`}
-          >
-            Todas
+          <button onClick={() => setFilterCategory(null)} className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${!filterCategory ? "bg-[#0F1A2E] text-white border-[#0F1A2E]" : "border-[#E7ECF2] text-[#5A6678] hover:border-gray-300"}`}>
+            {t("filterAll")}
           </button>
           {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat === filterCategory ? null : cat)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${filterCategory === cat ? "bg-gray-900 text-white border-gray-900" : "border-gray-200 text-gray-600 hover:border-gray-400"}`}
-            >
+            <button key={cat} onClick={() => setFilterCategory(cat === filterCategory ? null : cat)} className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${filterCategory === cat ? "bg-[#0F1A2E] text-white border-[#0F1A2E]" : "border-[#E7ECF2] text-[#5A6678] hover:border-gray-300"}`}>
               {cat}
             </button>
           ))}
         </div>
       )}
 
-      {/* Empty state — no answers yet */}
       {!hasAnswers && !answering && (
-        <Card>
+        <Card className="border-[#E7ECF2]">
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Sparkles className="h-12 w-12 text-gray-300 mb-3" />
-            <p className="font-medium text-gray-700">{questions.length} preguntas listas</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Haz clic en "Responder con IA" para que Cautium analice tu base de conocimiento y responda automáticamente.
-            </p>
+            <p className="font-medium text-[#0F1A2E]">{t("noAnswersYet", { count: questions.length })}</p>
+            <p className="text-sm text-[#8794A8] mt-1 max-w-sm">{t("noAnswersDesc")}</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Questions */}
-      {hasAnswers && (
-        <div className="grid gap-3">
+      {hasAnswers && !answering && (
+        <div className="grid gap-2">
           {filtered.map((q) => (
-            <Card key={q.id} className={`overflow-hidden transition-shadow ${q.approved ? "border-green-200 bg-green-50/30" : "hover:shadow-md"}`}>
-              {/* Question header */}
-              <CardContent
-                className="flex items-start gap-3 p-5 cursor-pointer"
-                onClick={() => setExpandedId(expandedId === q.id ? null : q.id)}
-              >
-                <button
-                  className="mt-0.5 shrink-0"
-                  onClick={(e) => { e.stopPropagation(); if (q.human_answer) toggleApprove(q); }}
-                >
-                  {q.approved
-                    ? <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    : <Circle className="h-5 w-5 text-gray-300" />}
+            <Card key={q.id} className={`overflow-hidden transition-shadow ${q.approved ? "border-green-200 bg-green-50/30" : "border-[#E7ECF2] hover:shadow-md"}`}>
+              <CardContent className="flex items-start gap-3 p-5 cursor-pointer" onClick={() => setExpandedId(expandedId === q.id ? null : q.id)}>
+                <button className="mt-0.5 shrink-0" onClick={(e) => { e.stopPropagation(); if (q.human_answer) toggleApprove(q); }}>
+                  {q.approved ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-gray-300" />}
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    {q.category && (
-                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{q.category}</span>
-                    )}
+                    {q.category && <span className="text-xs text-[#8794A8] bg-gray-100 px-2 py-0.5 rounded">{q.category}</span>}
                     {q.ai_confidence && (
-                      <span className={`text-xs px-2 py-0.5 rounded font-medium ${confidenceBadge[q.ai_confidence]}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${CONFIDENCE_BADGE[q.ai_confidence]}`}>
                         {confidenceLabel[q.ai_confidence]}
                       </span>
                     )}
                   </div>
-                  <p className={`text-sm font-medium ${q.approved ? "text-gray-500 line-through" : "text-gray-900"}`}>
+                  <p className={`text-sm font-medium ${q.approved ? "text-gray-400 line-through" : "text-[#0F1A2E]"}`}>
                     {q.order_index + 1}. {q.text}
                   </p>
                   {q.human_answer && expandedId !== q.id && (
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-1">{q.human_answer}</p>
+                    <p className="text-sm text-[#5A6678] mt-1 line-clamp-1">{q.human_answer}</p>
                   )}
                 </div>
                 {expandedId === q.id ? <ChevronUp className="h-4 w-4 text-gray-400 shrink-0 mt-1" /> : <ChevronDown className="h-4 w-4 text-gray-400 shrink-0 mt-1" />}
               </CardContent>
 
-              {/* Expanded answer editor */}
               {expandedId === q.id && (
-                <div className="border-t px-5 pb-5 pt-4 space-y-4 bg-white">
+                <div className="border-t border-[#E7ECF2] px-5 pb-5 pt-4 space-y-4 bg-white">
                   {q.ai_source && (
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-[#8794A8]">
                       <BookOpen className="h-3.5 w-3.5" />
-                      Fuente: <span className="font-medium text-gray-700">{q.ai_source}</span>
+                      {t("source")}: <span className="font-medium text-[#5A6678]">{q.ai_source}</span>
                     </div>
                   )}
                   <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2 block">
-                      Respuesta {q.human_answer !== q.ai_answer ? "(editada)" : "(IA)"}
+                    <label className="text-xs font-semibold uppercase tracking-wide text-[#8794A8] mb-2 block">
+                      {q.human_answer !== q.ai_answer ? t("answerLabelEdited") : t("answerLabelAI")}
                     </label>
                     <Textarea
                       className="min-h-[120px] text-sm resize-y"
@@ -289,24 +301,15 @@ export default function QuestionnairePage() {
                       onChange={(e) => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, human_answer: e.target.value } : item))}
                       onBlur={(e) => saveAnswer(q, e.target.value)}
                     />
-                    {savingId === q.id && <p className="text-xs text-gray-400 mt-1">Guardando…</p>}
+                    {savingId === q.id && <p className="text-xs text-[#8794A8] mt-1">{t("saving")}</p>}
                   </div>
                   <div className="flex gap-3">
-                    <Button
-                      size="sm"
-                      onClick={() => toggleApprove(q)}
-                      variant={q.approved ? "outline" : "default"}
-                      disabled={!q.human_answer}
-                    >
-                      {q.approved ? "Quitar aprobación" : "✓ Aprobar respuesta"}
+                    <Button size="sm" onClick={() => toggleApprove(q)} variant={q.approved ? "outline" : "default"} disabled={!q.human_answer}>
+                      {q.approved ? t("unapprove") : t("approve")}
                     </Button>
                     {q.ai_answer && q.human_answer !== q.ai_answer && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, human_answer: item.ai_answer } : item))}
-                      >
-                        Restaurar IA
+                      <Button size="sm" variant="ghost" onClick={() => setQuestions((prev) => prev.map((item) => item.id === q.id ? { ...item, human_answer: item.ai_answer } : item))}>
+                        {t("restoreAI")}
                       </Button>
                     )}
                   </div>
@@ -317,17 +320,16 @@ export default function QuestionnairePage() {
         </div>
       )}
 
-      {/* Export CTA when all approved */}
       {hasAnswers && approved === questions.length && questions.length > 0 && (
         <Card className="border-green-300 bg-green-50">
           <CardContent className="flex items-center justify-between p-5">
             <div>
-              <p className="font-semibold text-green-900">¡Todas las respuestas aprobadas!</p>
-              <p className="text-sm text-green-700">El cuestionario está listo para exportar.</p>
+              <p className="font-semibold text-green-900">{t("allApproved")}</p>
+              <p className="text-sm text-green-700">{t("allApprovedDesc")}</p>
             </div>
             <Button onClick={handleExport} disabled={exporting}>
-              {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Descargar Excel
+              {exporting ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Download className="h-4 w-4 me-2" />}
+              {t("download")}
             </Button>
           </CardContent>
         </Card>
