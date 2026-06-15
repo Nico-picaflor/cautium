@@ -6,7 +6,8 @@
     "questionnaires": "Questionnaires",
     "settings": "Settings",
     "signOut": "Sign out",
-    "language": "Language"
+    "language": "Language",
+    "brandSub": "Third Party Risk"
   },
   "auth": {
     "signIn": "Sign in",
@@ -48,7 +49,21 @@
     "manageQuestionnaires": "Go to Questionnaires to manage.",
     "noDocuments": "No indexed documents",
     "uploadPolicies": "Upload policies →",
-    "documentsReady": "{count} documents indexed and ready."
+    "documentsReady": "{count} documents indexed and ready.",
+    "noVendorsYet": "None yet",
+    "noDocumentsYet": "No documents",
+    "noQuestionnairesYet": "No questionnaires",
+    "inProgress": "In progress",
+    "due": "Due",
+    "riskDist": "Risk distribution",
+    "emptyRisk": "Add vendors to see how your portfolio risk breaks down by tier.",
+    "addVendor": "Add vendor",
+    "fwCoverage": "Framework coverage",
+    "fwCoverageSub": "Your {count} indexed documents, by framework",
+    "savedTime": "Time saved this week",
+    "savedTimeSub": "You have {count} questions queued. Answering with AI saves time.",
+    "answerWithAI": "Answer with AI",
+    "viewAll": "View all"
   },
   "documents": {
     "title": "Knowledge base",
@@ -135,7 +150,13 @@
     "confidenceMedium": "Medium confidence",
     "confidenceLow": "Low confidence",
     "filterAll": "All",
-    "notFound": "Questionnaire not found"
+    "notFound": "Questionnaire not found",
+    "confHighShort": "high confidence",
+    "confMedShort": "medium",
+    "draftsReady": "{count} answers drafted with AI",
+    "draftsReadySub": "Review, edit and approve — each answer cites its source document.",
+    "approveAll": "Approve all",
+    "edit": "Edit"
   },
   "settings": {
     "title": "Settings",

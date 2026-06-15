@@ -6,7 +6,8 @@
     "questionnaires": "Cuestionarios",
     "settings": "Ajustes",
     "signOut": "Cerrar sesión",
-    "language": "Idioma"
+    "language": "Idioma",
+    "brandSub": "Riesgo de Terceros"
   },
   "auth": {
     "signIn": "Iniciar sesión",
@@ -48,7 +49,21 @@
     "manageQuestionnaires": "Ve a Cuestionarios para gestionar.",
     "noDocuments": "Sin documentos indexados",
     "uploadPolicies": "Subir políticas →",
-    "documentsReady": "{count} documentos indexados y listos."
+    "documentsReady": "{count} documentos indexados y listos.",
+    "noVendorsYet": "Ninguno aún",
+    "noDocumentsYet": "Sin documentos",
+    "noQuestionnairesYet": "Sin cuestionarios",
+    "inProgress": "En progreso",
+    "due": "Vence",
+    "riskDist": "Distribución de riesgo",
+    "emptyRisk": "Añade proveedores para ver cómo se reparte el riesgo de tu cartera por nivel.",
+    "addVendor": "Añadir proveedor",
+    "fwCoverage": "Cobertura de frameworks",
+    "fwCoverageSub": "Tus {count} documentos indexados, por framework",
+    "savedTime": "Tiempo ahorrado esta semana",
+    "savedTimeSub": "Tienes {count} preguntas en cola. Responderlas con IA te ahorra tiempo.",
+    "answerWithAI": "Responder con IA",
+    "viewAll": "Ver todos"
   },
   "documents": {
     "title": "Base de conocimiento",
@@ -135,7 +150,13 @@
     "confidenceMedium": "Media confianza",
     "confidenceLow": "Baja confianza",
     "filterAll": "Todas",
-    "notFound": "Cuestionario no encontrado"
+    "notFound": "Cuestionario no encontrado",
+    "confHighShort": "confianza alta",
+    "confMedShort": "media",
+    "draftsReady": "{count} respuestas generadas con IA",
+    "draftsReadySub": "Revisa, edita y aprueba — cada respuesta cita su documento de origen.",
+    "approveAll": "Aprobar todo",
+    "edit": "Editar"
   },
   "settings": {
     "title": "Ajustes",

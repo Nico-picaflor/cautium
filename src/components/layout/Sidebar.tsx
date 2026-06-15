@@ -3,14 +3,57 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
-import { LayoutDashboard, Building2, FileText, ClipboardList, Settings, LogOut } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { LanguageSelector } from "@/components/ui/language-selector";
 
 interface Props {
   locale: string;
 }
+
+const NAV_ICONS = {
+  dashboard: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <rect x="3" y="3" width="7" height="9" rx="1.2" />
+      <rect x="14" y="3" width="7" height="5" rx="1.2" />
+      <rect x="14" y="12" width="7" height="9" rx="1.2" />
+      <rect x="3" y="16" width="7" height="5" rx="1.2" />
+    </svg>
+  ),
+  vendors: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M3 21h18" />
+      <path d="M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16" />
+      <path d="M19 21V11a1 1 0 0 0-1-1h-3" />
+      <path d="M9 8h2M9 12h2M9 16h2" />
+    </svg>
+  ),
+  documents: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h5" />
+    </svg>
+  ),
+  questionnaires: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <rect x="8" y="3" width="8" height="4" rx="1.2" />
+      <path d="M16 5h1.5A1.5 1.5 0 0 1 19 6.5v13A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-13A1.5 1.5 0 0 1 6.5 5H8" />
+      <path d="M9 12h6M9 16h6" />
+    </svg>
+  ),
+  settings: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  signOut: (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.85 }}>
+      <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  ),
+};
 
 export default function Sidebar({ locale }: Props) {
   const pathname = usePathname();
@@ -19,11 +62,11 @@ export default function Sidebar({ locale }: Props) {
   const t = useTranslations("nav");
 
   const navItems = [
-    { href: "/dashboard", label: t("panel"), icon: LayoutDashboard },
-    { href: "/vendors", label: t("vendors"), icon: Building2 },
-    { href: "/documents", label: t("documents"), icon: FileText },
-    { href: "/questionnaires", label: t("questionnaires"), icon: ClipboardList },
-    { href: "/settings", label: t("settings"), icon: Settings },
+    { href: "/dashboard", label: t("panel"), icon: NAV_ICONS.dashboard },
+    { href: "/vendors", label: t("vendors"), icon: NAV_ICONS.vendors },
+    { href: "/documents", label: t("documents"), icon: NAV_ICONS.documents },
+    { href: "/questionnaires", label: t("questionnaires"), icon: NAV_ICONS.questionnaires },
+    { href: "/settings", label: t("settings"), icon: NAV_ICONS.settings },
   ];
 
   async function handleSignOut() {
@@ -32,50 +75,44 @@ export default function Sidebar({ locale }: Props) {
     router.refresh();
   }
 
+  const navBase: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 11, width: "100%", textAlign: "start",
+    border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14.5, fontWeight: 600,
+    padding: "10px 12px", borderRadius: 10, background: "none", color: "#5A6678",
+    textDecoration: "none", transition: "background 0.15s",
+  };
+  const navActive: React.CSSProperties = { ...navBase, background: "#E6F7F5", color: "#0C7A70" };
+
   return (
-    <aside className="w-64 bg-white border-e border-gray-200 flex flex-col shrink-0">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="7" fill="#0FB5A6"/>
-            <path d="M14 6l5 8H9l5-8z" fill="white" opacity="0.9"/>
-            <path d="M14 22l-5-8h10l-5 8z" fill="white" opacity="0.6"/>
-          </svg>
-          <span className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Cautium</span>
+    <aside style={{ width: 248, flexShrink: 0, background: "#FFFFFF", borderInlineEnd: "1px solid #E7ECF2", display: "flex", flexDirection: "column", padding: "22px 16px" }}>
+      {/* Brand */}
+      <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "4px 8px 22px" }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(140deg,#1FD3C2,#0E8C82)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 20px -8px rgba(15,181,166,0.7)", flexShrink: 0 }}>
+          <div style={{ width: 12, height: 12, background: "#FFFFFF", transform: "rotate(45deg)", borderRadius: 2 }} />
         </div>
-        <p className="text-xs text-gray-400 mt-1">Third Party Risk</p>
+        <div>
+          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: 18, letterSpacing: "-0.02em", lineHeight: 1 }}>Cautium</div>
+          <div style={{ fontSize: 11.5, color: "#8794A8", marginTop: 3 }}>{t("brandSub")}</div>
+        </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-0.5">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+      {/* Nav */}
+      <nav style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {navItems.map(({ href, label, icon }) => {
+          const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                active
-                  ? "bg-teal-50 text-teal-700"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Icon className={cn("h-4 w-4", active ? "text-teal-600" : "text-gray-400")} />
+            <Link key={href} href={href} style={active ? navActive : navBase}>
+              {icon}
               {label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-200 space-y-1">
-        <div className="px-1 pb-1">
-          <LanguageSelector currentLocale={locale} compact />
-        </div>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 w-full transition-colors"
-        >
-          <LogOut className="h-4 w-4 text-gray-400" />
+      {/* Sign out */}
+      <div style={{ marginTop: "auto", paddingTop: 18, borderTop: "1px solid #EEF1F6" }}>
+        <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", gap: 11, width: "100%", background: "none", border: "none", cursor: "pointer", color: "#6B7892", fontFamily: "inherit", fontSize: 14.5, fontWeight: 500, padding: "9px 12px", borderRadius: 10 }}>
+          {NAV_ICONS.signOut}
           {t("signOut")}
         </button>
       </div>
