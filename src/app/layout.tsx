@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/react";
+// CORRECCIÓN: Cambiado de "@vercel/analytics/react" a "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next"; 
 import "./globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -35,6 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
+        {/* Tu componente está perfectamente ubicado aquí */}
         <Analytics />
       </body>
     </html>
